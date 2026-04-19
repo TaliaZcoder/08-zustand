@@ -1,29 +1,24 @@
-import { useState } from "react";
+'use client';
+
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import css from "./NoteForm.module.css";
 
 import { createNote } from "@/lib/api";
-import type { NoteTag } from "../../types/note";
+import { useNoteStore } from "@/lib/store/noteStore";
 
-export interface NoteFormValues {
-  title: string;
-  content: string;
-  tag: NoteTag;
-}
-
-export interface NoteFormProps {
-  onClose: () => void;
-}
+import type { NoteTag } from "@/types/note";
 
 export default function NoteForm() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [tag, setTag] = useState("Todo");
+   const {
+    draft,
+    setDraft,
+    clearDraft,
+  } = useNoteStore();
 
   const mutation = useMutation({
     mutationFn: createNote,
@@ -32,20 +27,18 @@ export default function NoteForm() {
         queryKey: ["notes"],
       });
 
-      router.push("/notes/filter/all");
+      clearDraft();
+
+      router.back();
     },
   });
 
   const handleSubmit = (
-    e: React.FormEvent<HTMLFormElement>
+    e: React.SyntheticEvent<HTMLFormElement>
   ) => {
     e.preventDefault();
 
-    mutation.mutate({
-      title,
-      content,
-      tag,
-    });
+    mutation.mutate(draft);
   };
 
    return (
@@ -58,9 +51,12 @@ export default function NoteForm() {
 
         <input
           className={css.input}
-          value={title}
+          value={draft.title}
           onChange={(e) =>
-            setTitle(e.target.value)
+            setDraft({
+              title:
+                e.target.value,
+            })
           }
           required
         />
@@ -71,9 +67,12 @@ export default function NoteForm() {
 
         <textarea
           className={css.textarea}
-          value={content}
+          value={draft.content}
           onChange={(e) =>
-            setContent(e.target.value)
+            setDraft({
+              content:
+                e.target.value,
+            })
           }
         />
       </div>
@@ -83,32 +82,40 @@ export default function NoteForm() {
 
         <select
           className={css.select}
-          value={tag}
+          value={draft.tag}
           onChange={(e) =>
-            setTag(e.target.value)
+            setDraft({
+              tag:
+                e.target.value as NoteTag,
+            })
           }
         >
           <option value="Todo">Todo</option>
           <option value="Work">Work</option>
-          <option value="Personal">
-            Personal
-          </option>
-          <option value="Meeting">
-            Meeting
-          </option>
-          <option value="Shopping">
-            Shopping
-          </option>
+          <option value="Personal">Personal</option>
+          <option value="Meeting">Meeting</option>
+          <option value="Shopping">Shopping</option>
         </select>
       </div>
 
-      <div className={css.actions}>
-        <button
-          type="submit"
-          className={css.submitButton}
+       <div className={css.actions}>
+         <button
+          type="button"
+          className={css.cancelButton}
+          onClick={() => router.back()}
         >
-          Create note
-        </button>
+          Cancel
+         </button>
+         
+          <button
+            type="submit"
+            className={css.submitButton}
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending
+            ? "Creating..."
+            : "Create note"}
+          </button>
       </div>
     </form>
   );
