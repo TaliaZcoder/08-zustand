@@ -3,6 +3,7 @@ import {
   HydrationBoundary,
   dehydrate,
 } from "@tanstack/react-query";
+import type { Metadata } from "next";
 
 import { fetchNotes } from "@/lib/api";
 
@@ -13,6 +14,33 @@ type Props = {
     slug: string[];
   }>;
 };
+
+export async function generateMetadata({
+  params,
+}: Props): Promise<Metadata> {
+  const { slug } = await params;
+
+  const tag =
+    slug?.[0] === "all"
+      ? "All notes"
+      : slug?.[0];
+
+  return {
+    title: `Notes - ${tag}`,
+    description: `Browse notes filtered by ${tag}.`,
+
+    openGraph: {
+      title: `Notes - ${tag}`,
+      description: `Browse notes filtered by ${tag}.`,
+      url: `https://your-vercel-url.vercel.app/notes/filter/${slug[0]}`,
+      images: [
+        {
+          url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
+        },
+      ],
+    },
+  };
+}
 
 export default async function FilterPage({
   params,
